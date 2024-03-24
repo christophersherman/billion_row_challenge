@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
-	"strings"
 )
 
 func check(e error) {
@@ -16,29 +16,34 @@ func check(e error) {
 
 func main() {
 	counter := 0
-	file, err := os.Open("weather_stations.csv")
+	file, err := os.Open("measurements.csv")
 	check(err)
 
 	defer file.Close()
 
 	reader := csv.NewReader(file)
-
-	for i := 0; i < 2; i++ {
-		_, err := reader.Read()
-		check(err)
-	}
-
-	records, err := reader.ReadAll()
-	check(err)
+	reader.FieldsPerRecord = -1
+	reader.Comma = ';'
+	// for i := 0; i < 2; i++ {
+	// 	_, err := reader.Read()
+	// 	check(err)
+	// }
 
 	myMap := make(map[string][]float64)
-	for _, eachrecord := range records {
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
 		counter++
-		var city = strings.Split(eachrecord[0], ";")[0]
-		var measure = strings.Split(eachrecord[0], ";")[1]
+		var city = record[0]
+		var measure = record[1]
 		measureInt, err := strconv.ParseFloat(measure, 64)
-		check(err)
 
+		if err != nil {
+			fmt.Println("this shit right here boy")
+
+		}
 		if myMap[city] == nil {
 			myMap[city] = []float64{measureInt, 1, measureInt, measureInt} // Initialize sum, total_entries, min, max
 		} else {
@@ -55,8 +60,8 @@ func main() {
 	}
 	for key, value := range myMap {
 		mean := value[0] / value[1]
-		max := value[2]
-		min := value[3]
+		max := value[3]
+		min := value[2]
 
 		fmt.Printf("key : %s, mean %.2f, max %.2f, min %.2f \n", key, mean, max, min)
 	}
