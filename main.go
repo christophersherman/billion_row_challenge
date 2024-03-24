@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -16,6 +15,7 @@ func check(e error) {
 }
 
 func main() {
+	counter := 0
 	file, err := os.Open("weather_stations.csv")
 	check(err)
 
@@ -32,35 +32,35 @@ func main() {
 	check(err)
 
 	myMap := make(map[string][]float64)
-
 	for _, eachrecord := range records {
-
+		counter++
 		var city = strings.Split(eachrecord[0], ";")[0]
 		var measure = strings.Split(eachrecord[0], ";")[1]
 		measureInt, err := strconv.ParseFloat(measure, 64)
 		check(err)
 
 		if myMap[city] == nil {
-			myMap[city] = []float64{measureInt}
+			myMap[city] = []float64{measureInt, 1, measureInt, measureInt} // Initialize sum, total_entries, min, max
 		} else {
-			myMap[city] = append(myMap[city], measureInt)
-		}
+			// Update sum and total_entries
+			myMap[city][0] += measureInt // Update sum
+			myMap[city][1] += 1          // Update total_entries
 
-		for key, value := range myMap {
-			//calc the min, the mean, and the max for each station - then print it
-
-			sort.Float64s(value)
-			min := value[0]
-			max := value[len(value)-1]
-
-			var sum float64 = 0.0
-			for _, d := range value {
-				sum += d
+			if measureInt > myMap[city][3] {
+				myMap[city][3] = measureInt // Update max
+			} else if measureInt < myMap[city][2] {
+				myMap[city][2] = measureInt // Update min
 			}
-
-			mean := sum / float64(len(value))
-
-			fmt.Printf("key : %s, mean %.2f, max %.2f, min %.2f \n", key, mean, max, min)
 		}
 	}
+	for key, value := range myMap {
+		mean := value[0] / value[1]
+		max := value[2]
+		min := value[3]
+
+		fmt.Printf("key : %s, mean %.2f, max %.2f, min %.2f \n", key, mean, max, min)
+	}
+
+	fmt.Println(counter)
+
 }
